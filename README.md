@@ -42,7 +42,7 @@ git clone https://github.com/vngbh/divclok-app.git
 cd divclok-app
 open DivclokApp.xcodeproj
 ```
-![IMG_7707](https://github.com/user-attachments/assets/1357c824-797b-46a4-82f5-75264b9e3bcd)
-![IMG_7708](https://github.com/user-attachments/assets/db093c7c-0935-45b0-8975-0b0fb2cfc8b9)
+<img src="https://github.com/user-attachments/assets/1357c824-797b-46a4-82f5-75264b9e3bcd" width="30%"> <img src="https://github.com/user-attachments/assets/db093c7c-0935-45b0-8975-0b0fb2cfc8b9" width="30%">
+
 
 
