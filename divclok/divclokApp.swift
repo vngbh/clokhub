@@ -2,9 +2,12 @@ import SwiftUI
 
 @main
 struct divclokApp: App {
-    var body: some Scene {
-        WindowGroup {
-            LaunchView() // Bắt đầu bằng LaunchView
-        }
+  @StateObject var statsVM = PieStatsViewModel()
+
+  var body: some Scene {
+    WindowGroup {
+      LaunchView()
+        .environmentObject(statsVM)
     }
+  }
 }
