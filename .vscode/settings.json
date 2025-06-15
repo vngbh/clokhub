@@ -1,0 +1,20 @@
+{
+  // Bật format on save mặc định (sẽ dùng Prettier với JS/TS/HTML...)
+  "editor.formatOnSave": true,
+
+  // Tắt formatter mặc định cho Swift để tránh xung đột với Prettier
+  "[swift]": {
+    "editor.defaultFormatter": null,
+    "editor.formatOnSave": false
+  },
+
+  // Dùng Run on Save để gọi swift-format khi save file .swift
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.swift$",
+        "cmd": "/opt/homebrew/bin/swift-format format -i ${file}"
+      }
+    ]
+  }
+}
