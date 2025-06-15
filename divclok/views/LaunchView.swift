@@ -1,82 +1,91 @@
 import SwiftUI
 
 struct LaunchView: View {
-    @State private var showLogo       = false
-    @State private var hideLogo       = false
-    @State private var showContent    = false
-    @State private var overlayOpacity = 1.0
-    @State private var hideOverlay    = false
-    @Namespace private var logoNamespace
+  @State private var showLogo = false
+  @State private var hideLogo = false
+  @State private var showContent = false
+  @State private var overlayOpacity = 1.0
+  @State private var hideOverlay = false
 
-    var body: some View {
-        ZStack {
-            Color.white.ignoresSafeArea()
+  @Namespace private var logoNamespace
 
-            if showContent {
-                NavigationStack {
-                    ContentView(namespace: logoNamespace)
-                }
-            }
+  var body: some View {
+    ZStack {
+      Color.white.ignoresSafeArea()
 
-
-            if showContent && !hideOverlay {
-                Color.white
-                    .ignoresSafeArea()
-                    .opacity(overlayOpacity)
-            }
-
-            if !hideLogo {
-                VStack(spacing: 8) {
-                    Image("LaunchLogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 240, height: 240) // 👈 to hơn trước
-
-                    Text("divclok")
-                        .matchedGeometryEffect(id: "logo", in: logoNamespace)
-                        .font(.system(size:36, weight: .bold))
-                        .foregroundColor(Color.black.opacity(0.8))
-
-                    Text("Powered by vngbh")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.black.opacity(0.4))
-                }
-                .offset(y: -40) // 👈 nhích lên trên
-                .opacity(showLogo ? 1 : 0)
-                .scaleEffect(showLogo ? 1.0 : 0.95)
-                .animation(.easeInOut(duration: 1.4), value: showLogo) // 👈 fade in dài hơn 0.5s
-            }
+      if showContent {
+        NavigationStack {
+          ContentView(namespace: logoNamespace)
         }
-        .onAppear {
-            // 1. Fade in (1.4s)
-            withAnimation(.easeIn(duration: 1.4)) {
-                showLogo = true
-            }
+      }
 
-            // 2. Wait 2.9s → fade out (1.4s)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.3) {
-                withAnimation(.easeOut(duration: 1.4)) {
-                    showLogo = false
-                }
-            }
+      if showContent && !hideOverlay {
+        Color.white
+          .ignoresSafeArea()
+          .opacity(overlayOpacity)
+      }
 
-            // 3. Show content after fade out
-            DispatchQueue.main.asyncAfter(deadline: .now() + 4.7) {
-                showContent = true
-
-                // 4. Fade white overlay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.easeOut(duration: 1.2)) {
-                        overlayOpacity = 0.0
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                        hideOverlay = true
-                        hideLogo = true
-                    }
-                }
-            }
-        }
+      if !hideLogo {
+        logoView
+      }
     }
+    .onAppear {
+      startLaunchSequence()
+    }
+  }
+
+  private var logoView: some View {
+    VStack(spacing: 8) {
+      Image("LaunchLogo")
+        .resizable()
+        .scaledToFit()
+        .frame(width: 180, height: 180)
+
+      Text("divclok")
+        .matchedGeometryEffect(id: "logo", in: logoNamespace)
+        .font(.system(size: 36, weight: .bold))
+        .foregroundColor(AppColors.standardTextColor)
+
+      Text("Powered by vngbh")
+        .font(.system(size: 12))
+        .foregroundColor(AppColors.standardTextColor).opacity(0.5)
+    }
+    .offset(y: -40)
+    .opacity(showLogo ? 1 : 0)
+    .scaleEffect(showLogo ? 1.0 : 0.95)
+    .animation(.easeInOut(duration: 1.4), value: showLogo)
+  }
+
+  private func startLaunchSequence() {
+    // 1. Fade in logo
+    withAnimation(.easeIn(duration: 1.4)) {
+      showLogo = true
+    }
+
+    // 2. Wait 3.3s → fade out logo
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3.3) {
+      withAnimation(.easeOut(duration: 1.4)) {
+        showLogo = false
+      }
+    }
+
+    // 3. Show main content
+    DispatchQueue.main.asyncAfter(deadline: .now() + 4.7) {
+      showContent = true
+
+      // 4. Fade out overlay
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        withAnimation(.easeOut(duration: 1.2)) {
+          overlayOpacity = 0.0
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+          hideOverlay = true
+          hideLogo = true
+        }
+      }
+    }
+  }
 }
 
 #Preview {

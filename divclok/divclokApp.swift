@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct divclokApp: App {
-  @StateObject var statsVM = PieStatsViewModel()
+  @StateObject private var statsVM = PieStatsViewModel()
 
   var body: some Scene {
     WindowGroup {
