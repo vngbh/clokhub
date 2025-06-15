@@ -52,6 +52,35 @@ struct SettingsView: View {
     }
     .background(Color.white.ignoresSafeArea())
     .navigationBarBackButtonHidden(true)
+    .onAppear {
+      loadCurrentSettings()
+    }
+    .onChange(of: startOfDay) {
+      let calendar = Calendar.current
+      let comps = calendar.dateComponents([.hour, .minute], from: startOfDay)
+      let hour = comps.hour ?? 0
+      let minute = comps.minute ?? 0
+
+      UserDefaults.standard.set(hour, forKey: "startHour")
+      UserDefaults.standard.set(minute, forKey: "startMinute")
+      // Notify ViewModels or reload stats if needed
+      NotificationCenter.default.post(name: Notification.Name("ResetTimeChanged"), object: nil)
+    }
+  }
+
+  private func loadCurrentSettings() {
+    let defaults = UserDefaults.standard
+    let hour = defaults.integer(forKey: "startHour")
+    let minute = defaults.integer(forKey: "startMinute")
+
+    let calendar = Calendar.current
+    var dateComponents = DateComponents()
+    dateComponents.hour = hour
+    dateComponents.minute = minute
+
+    if let date = calendar.date(from: dateComponents) {
+      startOfDay = date
+    }
   }
 
   private var timeSettings: some View {
@@ -130,8 +159,8 @@ struct SettingsView: View {
 }
 
 #Preview {
-    NavigationStack {
-        SettingsView()
-    }
-    .environment(\.colorScheme, .light) // 👈 nếu bạn muốn kiểm thử dark mode thì đổi sang .dark
+  NavigationStack {
+    SettingsView()
+  }
+  .environment(\.colorScheme, .light)  // 👈 nếu bạn muốn kiểm thử dark mode thì đổi sang .dark
 }

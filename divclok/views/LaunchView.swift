@@ -42,7 +42,7 @@ struct LaunchView: View {
         .frame(width: 180, height: 180)
 
       Text("divclok")
-        .matchedGeometryEffect(id: "logo", in: logoNamespace)
+            .matchedGeometryEffect(id: "logo", in: logoNamespace, isSource: true)
         .font(.system(size: 36, weight: .bold))
         .foregroundColor(AppColors.standardTextColor)
 

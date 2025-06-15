@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
+  @EnvironmentObject var statsVM: PieStatsViewModel
+
   let namespace: Namespace.ID
 
   @State private var selectedIndex = 2
@@ -8,6 +10,8 @@ struct ContentView: View {
   @State private var currentStartTime = Date()
   @State private var currentTime = Date()
   @State private var chartRotation: Double = 60
+  @State private var pieOpacity: Double = 1.0
+  @State private var hasResetToday = false
 
   private let timer = Timer.publish(every: 1 / 60, on: .main, in: .common).autoconnect()
 
@@ -21,7 +25,7 @@ struct ContentView: View {
 
       VStack {
         Text("divclok")
-          .matchedGeometryEffect(id: "logo", in: namespace)
+          .matchedGeometryEffect(id: "logo", in: namespace, isSource: true)
           .font(.largeTitle.bold())
           .foregroundColor(standardTextColor)
           .padding(.top, 30)
@@ -39,6 +43,29 @@ struct ContentView: View {
       .onAppear {
         loadSavedState()
         currentTime = Date()
+        cachedStartHour = UserDefaults.standard.integer(forKey: "startHour")
+        cachedStartMinute = UserDefaults.standard.integer(forKey: "startMinute")
+        NotificationCenter.default.addObserver(
+          forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
+        ) { _ in
+          saveCurrentState()
+        }
+        NotificationCenter.default.addObserver(
+          forName: UIApplication.willTerminateNotification, object: nil, queue: .main
+        ) { _ in
+          saveCurrentState()
+        }
+        NotificationCenter.default.addObserver(
+          forName: Notification.Name("ResetTimeChanged"), object: nil, queue: .main
+        ) { _ in
+          // Cập nhật cached values khi reset time thay đổi
+          cachedStartHour = UserDefaults.standard.integer(forKey: "startHour")
+          cachedStartMinute = UserDefaults.standard.integer(forKey: "startMinute")
+          // Force check reset với thời gian mới ngay lập tức
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            checkResetIfNeeded()
+          }
+        }
       }
       .onDisappear {
         saveCurrentState()
@@ -46,6 +73,9 @@ struct ContentView: View {
       .onReceive(timer) {
         currentTime = $0
         checkResetIfNeeded()
+        // Cập nhật currentDayLive với thời gian hiện tại
+        statsVM.updateCurrentDayLive(
+          with: accumulatedTimes, selectedIndex: selectedIndex, currentStartTime: currentStartTime)
       }
     }
   }
@@ -67,6 +97,7 @@ struct ContentView: View {
         PieChartView(percentages: percents, colors: pastelColors)
           .frame(width: pieSize, height: pieSize)
           .rotationEffect(.degrees(chartRotation))
+          .opacity(pieOpacity)
 
         Circle()
           .fill(Color.white)
@@ -203,6 +234,10 @@ struct ContentView: View {
   }
 
   private func loadSavedState() {
+    if UserDefaults.standard.object(forKey: "startHour") == nil {
+      UserDefaults.standard.set(22, forKey: "startHour")
+      UserDefaults.standard.set(0, forKey: "startMinute")
+    }
     if let saved = UserDefaults.standard.dictionary(forKey: "accumulatedTimes")
       as? [String: TimeInterval]
     {
@@ -220,32 +255,113 @@ struct ContentView: View {
       accumulatedTimes[selectedIndex, default: 0] += elapsedSince
     }
 
+    let lastResetTS = UserDefaults.standard.double(forKey: "lastResetDate")
+    if lastResetTS > 0 {
+      hasResetToday = Calendar.current.isDate(
+        Date(timeIntervalSince1970: lastResetTS),
+        inSameDayAs: Date()
+      )
+    }
+
     resetIfNeeded()
     currentStartTime = Date()
     chartRotation = -((Double(selectedIndex) * 120 + 60).truncatingRemainder(dividingBy: 360))
   }
 
   private func checkResetIfNeeded() {
+    let calendar = Calendar.current
     let now = Date()
-    var calendar = Calendar.current
-    calendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+    let h = UserDefaults.standard.integer(forKey: "startHour")
+    let m = UserDefaults.standard.integer(forKey: "startMinute")
 
-    let current = calendar.dateComponents([.year, .month, .day], from: now)
-    let resetTime = calendar.date(
-      from: DateComponents(year: current.year, month: current.month, day: current.day, hour: 22))!
-    let lastResetTimestamp = UserDefaults.standard.double(forKey: "lastResetDate")
-    let lastResetDate = Date(timeIntervalSince1970: lastResetTimestamp)
+    // Giờ reset hôm nay
+    let comps = calendar.dateComponents([.year, .month, .day], from: now)
+    let todayReset = calendar.date(
+      from: DateComponents(
+        year: comps.year, month: comps.month, day: comps.day, hour: h, minute: m
+      ))!
 
-    if now >= resetTime && lastResetDate < resetTime {
-      accumulatedTimes = [0: 0, 1: 0, 2: 0]
-      currentStartTime = now
-      UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastResetDate")
+    let lastResetTS = UserDefaults.standard.double(forKey: "lastResetDate")
+
+    // Kiểm tra xem đã qua thời gian reset hôm nay chưa và chưa reset
+    let hasPassedTodayReset = now >= todayReset
+    let hasResetAfterTodayReset =
+      lastResetTS > 0 && Date(timeIntervalSince1970: lastResetTS) >= todayReset
+
+    let needsReset = hasPassedTodayReset && !hasResetAfterTodayReset
+
+    if needsReset {
+      print("🔄 Reset needed at \(now) (reset time: \(todayReset))")
+
+      // Lưu stats hiện tại trước khi reset
+      let currentTotalTime =
+        accumulatedTimes.values.reduce(0, +) + now.timeIntervalSince(currentStartTime)
+      if currentTotalTime > 0 {
+        let saveDate = calendar.date(byAdding: .second, value: -1, to: todayReset)!  // 1 giây trước reset time
+        let keyToSave = statsVM.getLogicalKey(for: saveDate)
+
+        if statsVM.repo.fetch(by: keyToSave) == nil {
+          statsVM.recordCurrentDayStat(for: saveDate)
+          print("💾 Saved stats for \(keyToSave)")
+        }
+      }
+
+      withAnimation(.easeOut(duration: 0.4)) {
+        pieOpacity = 0.0
+      }
+
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        // Reset tất cả về 0 cho ngày mới
+        accumulatedTimes = [0: 0, 1: 0, 2: 0]
+        currentStartTime = now
+
+        // Reset currentDayLive cho ngày mới
+        statsVM.resetCurrentDay()
+
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastResetDate")
+        print("✅ Reset completed at \(now)")
+
+        withAnimation(.easeIn(duration: 0.4)) {
+          pieOpacity = 1.0
+        }
+      }
     }
   }
 
   private func resetIfNeeded() {
     checkResetIfNeeded()
   }
+
+  private func recordCurrentStat() {
+    let todayKey = statsVM.getLogicalKey(for: Date())
+    let totalTime = accumulatedTimes.values.reduce(0, +)
+    let percents = (0..<3).map { i in
+      let t = accumulatedTimes[i, default: 0]
+      return totalTime > 0 ? t / totalTime : 0
+    }
+    let repo = PieStatsRepository()
+    repo.saveOrUpdate(date: todayKey, values: percents)
+  }
+
+  private func saveDayStatToDB() {
+    let todayKey = statsVM.getLogicalKey(for: Date())
+    let totalTime =
+      accumulatedTimes.values.reduce(0, +) + currentTime.timeIntervalSince(currentStartTime)
+    let percents = (0..<3).map { i in
+      let t =
+        accumulatedTimes[i, default: 0]
+        + (selectedIndex == i ? currentTime.timeIntervalSince(currentStartTime) : 0)
+      return totalTime > 0 ? t / totalTime : 0
+    }
+
+    print("📥 Saving to CoreData: \(percents)")
+
+    let repo = PieStatsRepository()
+    repo.saveOrUpdate(date: todayKey, values: percents)
+  }
+
+  @State private var cachedStartHour: Int = UserDefaults.standard.integer(forKey: "startHour")
+  @State private var cachedStartMinute: Int = UserDefaults.standard.integer(forKey: "startMinute")
 }
 
 #Preview {
