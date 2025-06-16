@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "clok.001.jpeg",
+      "filename" : "clok2.001.jpeg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "clok.001 1.jpeg",
+      "filename" : "clok2.001 1.jpeg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "clok.001 2.jpeg",
+      "filename" : "clok2.001 2.jpeg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"

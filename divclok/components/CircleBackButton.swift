@@ -6,19 +6,31 @@ struct CircleBackButton: View {
 
   var body: some View {
     Button(action: action) {
-      Image(systemName: "chevron.left")
-        .font(.system(size: 14, weight: .heavy))
-        .foregroundColor(.white)
-        .frame(width: 36, height: 36)
-        .background(Circle().fill(standardTextColor))
-        .shadow(radius: 6)
+      Image(systemName: "xmark")
+        .font(.system(size: 18, weight: .bold))
+        .foregroundColor(standardTextColor)
+        .frame(width: 60, height: 60)
+        .background(.ultraThinMaterial, in: Circle())
     }
   }
 }
 
 #Preview {
-  CircleBackButton(action: {
-    print("Back button tapped")
-  })
+  VStack(spacing: 20) {
+    CircleBackButton(action: {
+      print("Close button tapped")
+    })
+
+    // Test trên background khác nhau
+    ZStack {
+      Color.blue.opacity(0.3)
+        .frame(width: 200, height: 100)
+
+      CircleBackButton(action: {
+        print("Close button tapped")
+      })
+    }
+    .cornerRadius(12)
+  }
   .padding()
 }

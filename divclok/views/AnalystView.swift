@@ -80,7 +80,6 @@ struct AnalystView: View {
       statsVM.invalidateLogicalKeyCache()
       statsVM.refreshStats()
     }
-    .navigationBarBackButtonHidden(true)
     .overlay(
       VStack {
         Spacer()
@@ -238,8 +237,6 @@ struct AnalystView: View {
 }
 
 #Preview {
-  NavigationStack {
-    AnalystView()
-      .environmentObject(PieStatsViewModel())
-  }
+  AnalystView()
+    .environmentObject(PieStatsViewModel())
 }

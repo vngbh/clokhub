@@ -38,12 +38,9 @@ struct PersonalView: View {
         .padding(.bottom, 11)
     }
     .background(Color.white.ignoresSafeArea())
-    .navigationBarBackButtonHidden(true)
   }
 }
 
 #Preview {
-  NavigationStack {
-    PersonalView()
-  }
+  PersonalView()
 }

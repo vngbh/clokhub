@@ -121,6 +121,16 @@ struct ContentView: View {
         statsVM.updateCurrentDayLive(
           with: accumulatedTimes, selectedIndex: selectedIndex, currentStartTime: currentStartTime)
       }
+      .sheet(isPresented: $showAnalyst) {
+        AnalystView()
+          .environmentObject(statsVM)
+      }
+      .sheet(isPresented: $showPersonal) {
+        PersonalView()
+      }
+      .sheet(isPresented: $showSettings) {
+        SettingsView()
+      }
     }
   }
 
@@ -261,15 +271,15 @@ struct ContentView: View {
   private var bottomMenu: some View {
     HStack {
       Spacer()
-      NavigationLink(destination: AnalystView()) {
+      Button(action: { showAnalyst = true }) {
         MenuButton(icon: "chart.pie.fill")
       }
       Spacer()
-      NavigationLink(destination: PersonalView()) {
+      Button(action: { showPersonal = true }) {
         MenuButton(icon: "person.crop.circle")
       }
       Spacer()
-      NavigationLink(destination: SettingsView()) {
+      Button(action: { showSettings = true }) {
         MenuButton(icon: "gearshape")
       }
       Spacer()
@@ -362,12 +372,6 @@ struct ContentView: View {
     let h = cachedStartHour  // Use cached values instead of reading from UserDefaults each time
     let m = cachedStartMinute
 
-    let currentHour = calendar.component(.hour, from: now)
-    let currentMinute = calendar.component(.minute, from: now)
-
-    let currentTotalMinutes = currentHour * 60 + currentMinute
-    let resetTotalMinutes = h * 60 + m
-
     // Get today's reset time
     let comps = calendar.dateComponents([.year, .month, .day], from: now)
     var resetComponents = DateComponents()
@@ -388,21 +392,13 @@ struct ContentView: View {
     let hasPassedTodayReset = now >= todayReset
     let hasResetToday = lastResetDate >= todayReset
 
-    // Also check if we missed yesterday's reset (for app startup scenarios)
-    let yesterdayReset = calendar.date(byAdding: .day, value: -1, to: todayReset)!
-    let hasResetSinceYesterday = lastResetDate >= yesterdayReset
-
     let needsReset = hasPassedTodayReset && !hasResetToday
 
     if needsReset {
       print("🔄 Reset needed - Saving current day and resetting")
 
-      let currentTotalTime =
-        accumulatedTimes.values.reduce(0, +) + now.timeIntervalSince(currentStartTime)
-
       // Always save current data before reset, even if total time is 0
       let saveDate = calendar.date(byAdding: .second, value: -1, to: todayReset)!
-      let keyToSave = statsVM.getLogicalKey(for: saveDate)
 
       // Save the current day's data before reset
       statsVM.recordCurrentDayStat(for: saveDate)
@@ -442,6 +438,10 @@ struct ContentView: View {
   private func resetIfNeeded() {
     checkResetIfNeeded()
   }
+
+  @State private var showAnalyst = false
+  @State private var showPersonal = false
+  @State private var showSettings = false
 
   @State private var cachedStartHour: Int = UserDefaults.standard.integer(forKey: "startHour")
   @State private var cachedStartMinute: Int = UserDefaults.standard.integer(forKey: "startMinute")

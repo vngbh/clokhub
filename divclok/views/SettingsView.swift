@@ -58,7 +58,6 @@ struct SettingsView: View {
         .padding(.bottom, 10)
     }
     .background(Color.white.ignoresSafeArea())
-    .navigationBarBackButtonHidden(true)
     .onAppear {
       loadCurrentSettings()
     }
@@ -230,8 +229,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-  NavigationStack {
-    SettingsView()
-  }
-  .environment(\.colorScheme, .light)  // 👈 nếu bạn muốn kiểm thử dark mode thì đổi sang .dark
+  SettingsView()
+    .environment(\.colorScheme, .light)  // 👈 nếu bạn muốn kiểm thử dark mode thì đổi sang .dark
 }
