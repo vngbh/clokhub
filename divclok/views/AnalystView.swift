@@ -236,3 +236,10 @@ struct AnalystView: View {
     })
   }
 }
+
+#Preview {
+  NavigationStack {
+    AnalystView()
+      .environmentObject(PieStatsViewModel())
+  }
+}

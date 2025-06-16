@@ -9,3 +9,8 @@ struct RootView: View {
     }
   }
 }
+
+#Preview {
+  RootView()
+    .environmentObject(PieStatsViewModel())
+}

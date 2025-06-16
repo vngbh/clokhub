@@ -39,7 +39,9 @@ struct LaunchView: View {
       Image("LaunchLogo")
         .resizable()
         .scaledToFit()
-        .frame(width: 180, height: 180)
+        .frame(width: 140, height: 140)
+        .clipShape(RoundedRectangle(cornerRadius: 32))
+        .padding(.bottom, 36)
 
       Text("divclok")
         .matchedGeometryEffect(id: "logoText", in: logoNamespace, isSource: !showContent)
@@ -49,7 +51,7 @@ struct LaunchView: View {
 
       Text("Powered by vngbh")
         .font(.system(size: 12))
-        .foregroundColor(AppColors.standardTextColor).opacity(0.5)
+        .foregroundColor(AppColors.standardTextColor).opacity(0.3)
     }
     .offset(y: -40)
     .opacity(showLogo ? 1 : 0)
@@ -91,4 +93,5 @@ struct LaunchView: View {
 
 #Preview {
   LaunchView()
+    .environmentObject(PieStatsViewModel())
 }

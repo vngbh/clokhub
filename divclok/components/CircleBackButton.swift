@@ -15,3 +15,10 @@ struct CircleBackButton: View {
     }
   }
 }
+
+#Preview {
+  CircleBackButton(action: {
+    print("Back button tapped")
+  })
+  .padding()
+}

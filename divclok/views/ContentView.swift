@@ -6,6 +6,7 @@ struct ContentView: View {
   let namespace: Namespace.ID
 
   @State private var titleOpacity: Double = 0
+  @State private var isActive = true  // Track if app is active
 
   @State private var selectedIndex = 2
   @State private var accumulatedTimes: [Int: TimeInterval] = [0: 0, 1: 0, 2: 0]
@@ -13,7 +14,7 @@ struct ContentView: View {
   @State private var currentTime = Date()
   @State private var chartRotation: Double = 60
   @State private var pieOpacity: Double = 1.0
-  @State private var lastResetCheck = Date.distantPast  // For debouncing notifications and reset checks
+  @State private var lastResetCheck = Date.distantPast
 
   private let timer = Timer.publish(every: 1 / 60, on: .main, in: .common).autoconnect()  // 60 FPS cho smooth UI
 
@@ -58,7 +59,26 @@ struct ContentView: View {
         NotificationCenter.default.addObserver(
           forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
         ) { _ in
+          handleAppResignActive()
+        }
+        NotificationCenter.default.addObserver(
+          forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { _ in
+          handleAppBecomeActive()
+        }
+        NotificationCenter.default.addObserver(
+          forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main
+        ) { _ in
           saveCurrentState()
+        }
+        NotificationCenter.default.addObserver(
+          forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main
+        ) { _ in
+          // Cập nhật thời gian khi app sắp vào foreground
+          let elapsed = Date().timeIntervalSince(currentStartTime)
+          accumulatedTimes[selectedIndex, default: 0] += elapsed
+          currentStartTime = Date()
+          currentTime = Date()
         }
         NotificationCenter.default.addObserver(
           forName: UIApplication.willTerminateNotification, object: nil, queue: .main
@@ -74,7 +94,14 @@ struct ContentView: View {
             cachedStartHour = UserDefaults.standard.integer(forKey: "startHour")
             cachedStartMinute = UserDefaults.standard.integer(forKey: "startMinute")
             statsVM.invalidateLogicalKeyCache()
+
+            // Force check reset when time changes
+            checkResetIfNeeded()
+
             lastResetCheck = now
+            print(
+              "⏰ Reset time changed to \(cachedStartHour):\(String(format: "%02d", cachedStartMinute))"
+            )
           }
         }
       }
@@ -178,6 +205,8 @@ struct ContentView: View {
           )
           .onTapGesture {
             withAnimation(.easeInOut) {
+              guard isActive else { return }  // Prevent interaction when app is not active
+
               let now = Date()
               let elapsed = now.timeIntervalSince(currentStartTime)
               accumulatedTimes[selectedIndex, default: 0] += elapsed
@@ -198,6 +227,13 @@ struct ContentView: View {
               case 2: chartRotation += step
               default: break
               }
+
+              // Save state after changing activity to maintain continuity
+              let encodedTimes = Dictionary(
+                uniqueKeysWithValues: accumulatedTimes.map { (String($0.key), $0.value) })
+              UserDefaults.standard.set(encodedTimes, forKey: "accumulatedTimes")
+              UserDefaults.standard.set(selectedIndex, forKey: "selectedIndex")
+              UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastSavedTime")
             }
           }
       }
@@ -244,9 +280,31 @@ struct ContentView: View {
 
   // MARK: - State persistence
 
-  private func saveCurrentState() {
+  private func handleAppResignActive() {
+    // Mark app as not active and save current state
+    isActive = false
+    saveCurrentState()
+  }
+
+  private func handleAppBecomeActive() {
+    // Mark app as active, add elapsed time and reset start time
+    isActive = true
     let elapsed = Date().timeIntervalSince(currentStartTime)
     accumulatedTimes[selectedIndex, default: 0] += elapsed
+    currentStartTime = Date()
+    currentTime = Date()
+
+    // Save the updated state immediately
+    saveCurrentState()
+  }
+
+  private func saveCurrentState() {
+    // Always accumulate elapsed time from current session
+    let elapsed = Date().timeIntervalSince(currentStartTime)
+    accumulatedTimes[selectedIndex, default: 0] += elapsed
+
+    // Reset start time after accumulating
+    currentStartTime = Date()
 
     let encodedTimes = Dictionary(
       uniqueKeysWithValues: accumulatedTimes.map { (String($0.key), $0.value) })
@@ -260,6 +318,11 @@ struct ContentView: View {
       UserDefaults.standard.set(22, forKey: "startHour")
       UserDefaults.standard.set(0, forKey: "startMinute")
     }
+
+    // Load cached reset time values
+    cachedStartHour = UserDefaults.standard.integer(forKey: "startHour")
+    cachedStartMinute = UserDefaults.standard.integer(forKey: "startMinute")
+
     if let saved = UserDefaults.standard.dictionary(forKey: "accumulatedTimes")
       as? [String: TimeInterval]
     {
@@ -271,15 +334,24 @@ struct ContentView: View {
     }
 
     selectedIndex = UserDefaults.standard.integer(forKey: "selectedIndex")
+
+    // Always add elapsed time - timer should continue even when app is backgrounded/terminated
     let lastSaved = UserDefaults.standard.double(forKey: "lastSavedTime")
     if lastSaved > 0 {
       let elapsedSince = Date().timeIntervalSince1970 - lastSaved
-      accumulatedTimes[selectedIndex, default: 0] += elapsedSince
+      // Only add positive elapsed time to prevent issues with system clock changes
+      if elapsedSince > 0 && elapsedSince < 24 * 3600 {  // Max 24 hours to prevent corruption
+        accumulatedTimes[selectedIndex, default: 0] += elapsedSince
+      }
     }
 
+    // Check for reset BEFORE setting currentStartTime
     resetIfNeeded()
+
     currentStartTime = Date()
     chartRotation = -((Double(selectedIndex) * 120 + 60).truncatingRemainder(dividingBy: 360))
+
+    print("📱 App loaded - Current times: \(accumulatedTimes)")
   }
 
   private func checkResetIfNeeded() {
@@ -287,8 +359,8 @@ struct ContentView: View {
     calendar.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? TimeZone.current
 
     let now = Date()
-    let h = UserDefaults.standard.integer(forKey: "startHour")
-    let m = UserDefaults.standard.integer(forKey: "startMinute")
+    let h = cachedStartHour  // Use cached values instead of reading from UserDefaults each time
+    let m = cachedStartMinute
 
     let currentHour = calendar.component(.hour, from: now)
     let currentMinute = calendar.component(.minute, from: now)
@@ -296,6 +368,7 @@ struct ContentView: View {
     let currentTotalMinutes = currentHour * 60 + currentMinute
     let resetTotalMinutes = h * 60 + m
 
+    // Get today's reset time
     let comps = calendar.dateComponents([.year, .month, .day], from: now)
     var resetComponents = DateComponents()
     resetComponents.year = comps.year
@@ -308,43 +381,60 @@ struct ContentView: View {
 
     let todayReset = calendar.date(from: resetComponents)!
     let lastResetTS = UserDefaults.standard.double(forKey: "lastResetDate")
+    let lastResetDate =
+      lastResetTS > 0 ? Date(timeIntervalSince1970: lastResetTS) : Date.distantPast
 
-    let hasPassedResetTime = currentTotalMinutes >= resetTotalMinutes
-    let hasResetAfterTodayReset =
-      lastResetTS > 0 && Date(timeIntervalSince1970: lastResetTS) >= todayReset
+    // Check if we need to reset
+    let hasPassedTodayReset = now >= todayReset
+    let hasResetToday = lastResetDate >= todayReset
 
-    let needsReset = hasPassedResetTime && !hasResetAfterTodayReset
+    // Also check if we missed yesterday's reset (for app startup scenarios)
+    let yesterdayReset = calendar.date(byAdding: .day, value: -1, to: todayReset)!
+    let hasResetSinceYesterday = lastResetDate >= yesterdayReset
+
+    let needsReset = hasPassedTodayReset && !hasResetToday
 
     if needsReset {
+      print("🔄 Reset needed - Saving current day and resetting")
+
       let currentTotalTime =
         accumulatedTimes.values.reduce(0, +) + now.timeIntervalSince(currentStartTime)
 
-      if currentTotalTime > 0 {
-        let saveDate = calendar.date(byAdding: .second, value: -1, to: todayReset)!
-        let keyToSave = statsVM.getLogicalKey(for: saveDate)
+      // Always save current data before reset, even if total time is 0
+      let saveDate = calendar.date(byAdding: .second, value: -1, to: todayReset)!
+      let keyToSave = statsVM.getLogicalKey(for: saveDate)
 
-        // Save the previous day's data before reset
-        if statsVM.repo.fetch(by: keyToSave) == nil {
-          statsVM.recordCurrentDayStat(for: saveDate)
-        }
+      // Save the current day's data before reset
+      statsVM.recordCurrentDayStat(for: saveDate)
 
-        // Force refresh stats to ensure calendar shows the data immediately
-        statsVM.refreshStats()
-      }
+      // Force refresh stats to ensure calendar shows the data immediately
+      statsVM.refreshStats()
 
+      // Animate reset
       withAnimation(.easeOut(duration: 0.4)) {
         pieOpacity = 0.0
       }
 
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        // Reset all accumulated times
         accumulatedTimes = [0: 0, 1: 0, 2: 0]
         currentStartTime = now
         statsVM.resetCurrentDay()
+
+        // Update last reset timestamp
         UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastResetDate")
+
+        // Save the reset state immediately
+        let encodedTimes = Dictionary(
+          uniqueKeysWithValues: accumulatedTimes.map { (String($0.key), $0.value) })
+        UserDefaults.standard.set(encodedTimes, forKey: "accumulatedTimes")
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastSavedTime")
 
         withAnimation(.easeIn(duration: 0.4)) {
           pieOpacity = 1.0
         }
+
+        print("✅ Reset completed - New day started")
       }
     }
   }

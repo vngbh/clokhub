@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "divclok_logo.jpeg",
+      "filename" : "clok.001.jpeg",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "divclok_logo 1.jpeg",
+      "filename" : "clok.001 1.jpeg",
       "idiom" : "universal"
     }
   ],

@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "dogAvatar.jpg",
+      "filename" : "av.001.jpeg",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "dogAvatar 1.jpg",
+      "filename" : "av.001 1.jpeg",
       "idiom" : "universal"
     }
   ],
