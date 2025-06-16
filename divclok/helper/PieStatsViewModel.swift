@@ -171,7 +171,7 @@ final class PieStatsViewModel: ObservableObject {
     // Throttle update để tránh tính toán quá thường xuyên cho UI
     // Cho phép update ngay lập tức khi selectedIndex thay đổi
     let now = Date()
-    let shouldUpdate = forceUpdate || now.timeIntervalSince(lastLiveUpdate) >= 0.1  // 10 FPS cho live data
+    let shouldUpdate = forceUpdate || now.timeIntervalSince(lastLiveUpdate) >= 1.0 / 60.0  // 60 FPS cho live data
 
     if shouldUpdate {
       currentDayLive = (0..<3).map { i in

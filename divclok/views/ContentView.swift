@@ -16,7 +16,7 @@ struct ContentView: View {
   @State private var hasResetToday = false
   @State private var lastResetCheck = Date.distantPast  // For debouncing notifications and reset checks
 
-  private let timer = Timer.publish(every: 1 / 30, on: .main, in: .common).autoconnect()  // 30 FPS cho smooth UI
+  private let timer = Timer.publish(every: 1 / 60, on: .main, in: .common).autoconnect()  // 60 FPS cho smooth UI
 
   private let pastelColors = AppColors.pastelColors
   private let standardTextColor = AppColors.standardTextColor
@@ -329,7 +329,9 @@ struct ContentView: View {
     let hasResetAfterTodayReset =
       lastResetTS > 0 && Date(timeIntervalSince1970: lastResetTS) >= todayReset
 
-    let needsReset = hasPassedResetTime && !hasResetAfterTodayReset    if needsReset {
+    let needsReset = hasPassedResetTime && !hasResetAfterTodayReset
+
+    if needsReset {
       let currentTotalTime =
         accumulatedTimes.values.reduce(0, +) + now.timeIntervalSince(currentStartTime)
 
@@ -341,14 +343,16 @@ struct ContentView: View {
         if statsVM.repo.fetch(by: keyToSave) == nil {
           statsVM.recordCurrentDayStat(for: saveDate)
         }
-        
+
         // Force refresh stats to ensure calendar shows the data immediately
         statsVM.refreshStats()
       }
 
       withAnimation(.easeOut(duration: 0.4)) {
         pieOpacity = 0.0
-      }      DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+      }
+
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
         accumulatedTimes = [0: 0, 1: 0, 2: 0]
         currentStartTime = now
         statsVM.resetCurrentDay()
