@@ -6,9 +6,9 @@ struct divclokApp: App {
 
   init() {
     // DEBUG: Xóa sạch data để debug dễ dàng hơn
-    #if DEBUG
-      Self.clearAllData()
-    #endif
+    // #if DEBUG
+    //   Self.clearAllData()
+    // #endif
 
     // Thiết lập UserDefaults TRƯỚC KHI khởi tạo PieStatsViewModel
     let defaults = UserDefaults.standard

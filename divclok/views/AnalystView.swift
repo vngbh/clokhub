@@ -50,6 +50,13 @@ struct AnalystView: View {
     VStack(alignment: .center, spacing: 12) {
       header(monthDate: currentMonthDate)
 
+      // Show current logical day indicator
+      let logicalDayText = formatLogicalDayText(todayLogicalKey)
+      Text(logicalDayText)
+        .font(.subheadline)
+        .foregroundColor(.gray)
+        .padding(.bottom, 8)
+
       ZStack {
         calendarGrid(
           for: firstOfCurrentMonth,
@@ -117,12 +124,14 @@ struct AnalystView: View {
     totalCells: Int,
     todayLogicalKey: String
   ) -> some View {
+    let pastelGreen = Color(red: 167 / 255, green: 233 / 255, blue: 211 / 255)  // pastel xanh lá
     return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 6) {
       let weekdaySymbols = jstCalendar.shortWeekdaySymbols
-      ForEach(weekdaySymbols, id: \.self) { day in
-        Text(day.prefix(3))
+      ForEach(weekdaySymbols.indices, id: \.self) { i in
+        let isWeekend = (i == 0 || i == 6)
+        Text(weekdaySymbols[i].prefix(3))
           .font(.caption2.weight(.semibold))
-          .foregroundColor(.gray)
+          .foregroundColor(isWeekend ? pastelGreen : .gray)
           .frame(maxWidth: .infinity)
       }
 
@@ -132,7 +141,7 @@ struct AnalystView: View {
         } else {
           cellView(
             for: i, firstWeekday: firstWeekday, firstOfMonth: firstOfMonth,
-            todayLogicalKey: todayLogicalKey)
+            todayLogicalKey: todayLogicalKey, weekendColor: pastelGreen)
         }
       }
     }
@@ -140,25 +149,67 @@ struct AnalystView: View {
   }
 
   private func cellView(
-    for index: Int, firstWeekday: Int, firstOfMonth: Date, todayLogicalKey: String
+    for index: Int, firstWeekday: Int, firstOfMonth: Date, todayLogicalKey: String,
+    weekendColor: Color
   ) -> some View {
     let day = index - firstWeekday + 2
-    let date = jstCalendar.date(byAdding: .day, value: day - 1, to: firstOfMonth)!
+    // Đảm bảo ngày của cell là 00:00 JST
+    var comps = jstCalendar.dateComponents([.year, .month], from: firstOfMonth)
+    comps.day = day
+    comps.hour = 0
+    comps.minute = 0
+    comps.second = 0
+    comps.timeZone = jstCalendar.timeZone
+    let date = jstCalendar.date(from: comps)!
 
-    // Get the logical key specific for this date, not from cache
-    let logicalKey = statsVM.getLogicalKey(for: date)
-    let data = statsVM.dailyStats[logicalKey]
+    // So sánh bằng string hiển thị (ví dụ "June 15")
+    let df = DateFormatter()
+    df.dateFormat = "MMMM d"
+    df.timeZone = jstCalendar.timeZone
+    df.locale = Locale(identifier: "en_US")
+    let cellDayString = df.string(from: date)
 
-    // Strict comparison of logical keys
-    let isLogicalToday = logicalKey == todayLogicalKey
+    // Lấy ngày logic hiện tại (00:00 JST)
+    let logicKeyDate: Date = {
+      let formatter = DateFormatter()
+      formatter.dateFormat = "yyyy-MM-dd"
+      formatter.timeZone = jstCalendar.timeZone
+      return formatter.date(from: todayLogicalKey) ?? date
+    }()
+    let logicDayString = df.string(from: logicKeyDate)
+
+    let isFocusDay = cellDayString == logicDayString
+
+    // Cho calendar cells, sử dụng trực tiếp ngày của cell làm key
+    // Không áp dụng logic reset time vì dữ liệu đã được lưu với key chính xác
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    formatter.timeZone = jstCalendar.timeZone
+    let logicalKey = formatter.string(from: date)
+
+    // Nếu là ngày logic hiện tại, hiển thị real-time data
+    let displayData: [Double]? = {
+      if isFocusDay {
+        // Real-time data cho ngày hiện tại
+        let total = statsVM.currentDayLive.reduce(0, +)
+        return total > 0 ? statsVM.currentDayLive.map { $0 / total } : nil
+      } else {
+        // Dữ liệu đã lưu cho các ngày khác
+        return statsVM.dailyStats[logicalKey]
+      }
+    }()
+
+    // Tô màu vàng cam cho Chủ nhật và Thứ bảy
+    let weekday = jstCalendar.component(.weekday, from: date)
+    let isWeekend = (weekday == 1 || weekday == 7)
+    let textColor: Color = isFocusDay ? .red : (isWeekend ? weekendColor : standardTextColor)
 
     return VStack(spacing: 6) {
       Text("\(day)")
         .font(.system(size: 12, weight: .bold))
-        .foregroundColor(isLogicalToday ? .red : standardTextColor)  // Only red for logical today
+        .foregroundColor(textColor)
         .frame(width: 24, height: 24)
-
-      if let data = data {
+      if let data = displayData {
         PieChartView(percentages: data, colors: pastelColors)
           .frame(width: 26, height: 26)
       } else {
@@ -184,5 +235,19 @@ struct AnalystView: View {
     CircleBackButton(action: {
       dismiss()
     })
+  }
+
+  private func formatLogicalDayText(_ logicalKey: String) -> String {
+    let df = DateFormatter()
+    df.dateFormat = "MMMM d"
+    df.timeZone = jstCalendar.timeZone
+    df.locale = Locale(identifier: "en_US")
+
+    // Convert logical key back to date
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    formatter.timeZone = jstCalendar.timeZone
+
+    return ""
   }
 }

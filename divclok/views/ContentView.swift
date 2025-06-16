@@ -75,7 +75,6 @@ struct ContentView: View {
             cachedStartHour = UserDefaults.standard.integer(forKey: "startHour")
             cachedStartMinute = UserDefaults.standard.integer(forKey: "startMinute")
             statsVM.invalidateLogicalKeyCache()
-            print("⚙️ Reset time changed to \(cachedStartHour):\(cachedStartMinute)")
             lastResetCheck = now
           }
         }
@@ -330,9 +329,7 @@ struct ContentView: View {
     let hasResetAfterTodayReset =
       lastResetTS > 0 && Date(timeIntervalSince1970: lastResetTS) >= todayReset
 
-    let needsReset = hasPassedResetTime && !hasResetAfterTodayReset
-
-    if needsReset {
+    let needsReset = hasPassedResetTime && !hasResetAfterTodayReset    if needsReset {
       let currentTotalTime =
         accumulatedTimes.values.reduce(0, +) + now.timeIntervalSince(currentStartTime)
 
@@ -340,16 +337,18 @@ struct ContentView: View {
         let saveDate = calendar.date(byAdding: .second, value: -1, to: todayReset)!
         let keyToSave = statsVM.getLogicalKey(for: saveDate)
 
+        // Save the previous day's data before reset
         if statsVM.repo.fetch(by: keyToSave) == nil {
           statsVM.recordCurrentDayStat(for: saveDate)
         }
+        
+        // Force refresh stats to ensure calendar shows the data immediately
+        statsVM.refreshStats()
       }
 
       withAnimation(.easeOut(duration: 0.4)) {
         pieOpacity = 0.0
-      }
-
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+      }      DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
         accumulatedTimes = [0: 0, 1: 0, 2: 0]
         currentStartTime = now
         statsVM.resetCurrentDay()
@@ -387,8 +386,6 @@ struct ContentView: View {
         + (selectedIndex == i ? currentTime.timeIntervalSince(currentStartTime) : 0)
       return totalTime > 0 ? t / totalTime : 0
     }
-
-    print("📥 Saving to CoreData: \(percents)")
 
     let repo = PieStatsRepository()
     repo.saveOrUpdate(date: todayKey, values: percents)

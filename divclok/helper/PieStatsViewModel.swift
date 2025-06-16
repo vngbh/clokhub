@@ -36,33 +36,36 @@ final class PieStatsViewModel: ObservableObject {
 
     let startHour = UserDefaults.standard.integer(forKey: "startHour")
     let startMinute = UserDefaults.standard.integer(forKey: "startMinute")
-
-    // Lấy giờ:phút theo JST
-    let currentHour = jstCalendar.component(.hour, from: date)
-    let currentMinute = jstCalendar.component(.minute, from: date)
-
-    let currentTotalMinutes = currentHour * 60 + currentMinute
     let resetTotalMinutes = startHour * 60 + startMinute
 
-    // Chuyển date thành JST date trước khi -1 ngày để đảm bảo đúng ngày trong timezone JST
-    let jstDate = date.addingTimeInterval(
-      TimeInterval(TimeZone(identifier: "Asia/Tokyo")?.secondsFromGMT() ?? 0))
+    // Sử dụng JST timezone trực tiếp
+    let jstTimeZone = TimeZone(identifier: "Asia/Tokyo")!
+    var jstCalendarCopy = Calendar.current
+    jstCalendarCopy.timeZone = jstTimeZone
 
+    // Lấy thời gian hiện tại theo JST
+    let currentHour = jstCalendarCopy.component(.hour, from: date)
+    let currentMinute = jstCalendarCopy.component(.minute, from: date)
+    let currentTotalMinutes = currentHour * 60 + currentMinute
+
+    // Calculate logical date in JST
     let logicDate: Date
-    if currentTotalMinutes < resetTotalMinutes {
-      // Chưa đến giờ reset → lấy ngày hôm qua (trong JST)
-      logicDate = jstCalendar.date(byAdding: .day, value: -1, to: jstDate)!
+    if currentTotalMinutes >= resetTotalMinutes {
+      // Đã qua giờ reset của ngày mới → dùng ngày hiện tại
+      logicDate = date
+
     } else {
-      // Đã qua giờ reset → ngày hiện tại (trong JST)
-      logicDate = jstDate
+      // Chưa tới giờ reset của ngày mới → vẫn tính là ngày hôm trước
+      logicDate = jstCalendarCopy.date(byAdding: .day, value: -1, to: date)!
+
     }
 
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd"
-    formatter.calendar = jstCalendar
-    formatter.timeZone = jstCalendar.timeZone
+    formatter.timeZone = jstTimeZone
     let key = formatter.string(from: logicDate)
 
+    // Only cache if this is the current date
     if date.timeIntervalSince(now) > -1 && date.timeIntervalSince(now) < 1 {
       cachedTodayKey = key
       lastKeyUpdate = now
@@ -96,6 +99,15 @@ final class PieStatsViewModel: ObservableObject {
     // Convert thành phần trăm để lưu vào Core Data cho pie chart
     let percents = currentDayLive.map { total > 0 ? $0 / total : 0 }
     repo.saveOrUpdate(date: key, values: percents)
+
+    // Immediately update dailyStats for UI
+    dailyStats[key] = percents
+
+    // Trigger UI update
+    DispatchQueue.main.async {
+      self.objectWillChange.send()
+    }
+
     refreshStats()
   }
 
@@ -121,8 +133,35 @@ final class PieStatsViewModel: ObservableObject {
   }
 
   func invalidateLogicalKeyCache() {
+    // Lưu dữ liệu của ngày logic cũ trước khi invalidate cache
+    let oldLogicalKey = cachedTodayKey
+
     cachedTodayKey = ""
     lastKeyUpdate = Date.distantPast
+
+    // Kiểm tra xem ngày logic có thay đổi không
+    let newLogicalKey = getLogicalKey(for: Date())
+
+    if !oldLogicalKey.isEmpty && oldLogicalKey != newLogicalKey {
+      // Ngày logic đã thay đổi, lưu dữ liệu của ngày cũ
+      let total = currentDayLive.reduce(0, +)
+      if total > 0 {
+        let percents = currentDayLive.map { total > 0 ? $0 / total : 0 }
+        repo.saveOrUpdate(date: oldLogicalKey, values: percents)
+
+        // Cập nhật dailyStats ngay lập tức để hiển thị trong calendar
+        dailyStats[oldLogicalKey] = percents
+
+        // Reset currentDayLive cho ngày mới
+        currentDayLive = [0, 0, 0]
+      }
+    }
+
+    // Always refresh stats and trigger UI update to ensure calendar displays correctly
+    refreshStats()
+    DispatchQueue.main.async {
+      self.objectWillChange.send()  // Trigger UI update
+    }
   }
 
   func updateCurrentDayLive(
