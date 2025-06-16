@@ -5,6 +5,8 @@ struct ContentView: View {
 
   let namespace: Namespace.ID
 
+  @State private var titleOpacity: Double = 0  // Add state for title opacity
+
   @State private var selectedIndex = 2
   @State private var accumulatedTimes: [Int: TimeInterval] = [0: 0, 1: 0, 2: 0]
   @State private var currentStartTime = Date()
@@ -12,8 +14,9 @@ struct ContentView: View {
   @State private var chartRotation: Double = 60
   @State private var pieOpacity: Double = 1.0
   @State private var hasResetToday = false
+  @State private var lastResetCheck = Date.distantPast  // For debouncing notifications and reset checks
 
-  private let timer = Timer.publish(every: 1 / 60, on: .main, in: .common).autoconnect()
+  private let timer = Timer.publish(every: 1 / 30, on: .main, in: .common).autoconnect()  // 30 FPS cho smooth UI
 
   private let pastelColors = AppColors.pastelColors
   private let standardTextColor = AppColors.standardTextColor
@@ -25,7 +28,7 @@ struct ContentView: View {
 
       VStack {
         Text("divclok")
-          .matchedGeometryEffect(id: "logo", in: namespace, isSource: true)
+          .matchedGeometryEffect(id: "logoText", in: namespace, isSource: false)
           .font(.largeTitle.bold())
           .foregroundColor(standardTextColor)
           .padding(.top, 30)
@@ -45,6 +48,14 @@ struct ContentView: View {
         currentTime = Date()
         cachedStartHour = UserDefaults.standard.integer(forKey: "startHour")
         cachedStartMinute = UserDefaults.standard.integer(forKey: "startMinute")
+
+        // Animate the title opacity after a short delay to match the matchedGeometryEffect
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+          withAnimation(.easeIn(duration: 0.8)) {
+            titleOpacity = 1
+          }
+        }
+
         NotificationCenter.default.addObserver(
           forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
         ) { _ in
@@ -58,24 +69,37 @@ struct ContentView: View {
         NotificationCenter.default.addObserver(
           forName: Notification.Name("ResetTimeChanged"), object: nil, queue: .main
         ) { _ in
-          // Cập nhật cached values khi reset time thay đổi
-          cachedStartHour = UserDefaults.standard.integer(forKey: "startHour")
-          cachedStartMinute = UserDefaults.standard.integer(forKey: "startMinute")
-          // Force check reset với thời gian mới ngay lập tức
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            checkResetIfNeeded()
+          // Prevent multiple rapid updates with debounce
+          let now = Date()
+          if now.timeIntervalSince(lastResetCheck) >= 0.1 {  // 100ms debounce
+            cachedStartHour = UserDefaults.standard.integer(forKey: "startHour")
+            cachedStartMinute = UserDefaults.standard.integer(forKey: "startMinute")
+            statsVM.invalidateLogicalKeyCache()
+            print("⚙️ Reset time changed to \(cachedStartHour):\(cachedStartMinute)")
+            lastResetCheck = now
           }
         }
       }
       .onDisappear {
         saveCurrentState()
       }
-      .onReceive(timer) {
-        currentTime = $0
-        checkResetIfNeeded()
-        // Cập nhật currentDayLive với thời gian hiện tại
+      .onReceive(timer) { _ in
+        currentTime = Date()
+
+        // Chỉ check reset mỗi giây để tránh tải CPU cao
+        if Date().timeIntervalSince(lastResetCheck) >= 1.0 {
+          checkResetIfNeeded()
+          lastResetCheck = Date()
+        }
+
+        // Update currentDayLive với tần suất cao để UI mượt
         statsVM.updateCurrentDayLive(
           with: accumulatedTimes, selectedIndex: selectedIndex, currentStartTime: currentStartTime)
+      }
+      .onAppear {
+        withAnimation(.easeIn(duration: 1.0)) {
+          titleOpacity = 1.0  // Fade in the title
+        }
       }
     }
   }
@@ -170,6 +194,11 @@ struct ContentView: View {
               currentStartTime = now
               currentTime = now
 
+              // Force update ngay lập tức khi chuyển slice
+              statsVM.updateCurrentDayLive(
+                with: accumulatedTimes, selectedIndex: selectedIndex,
+                currentStartTime: currentStartTime, forceUpdate: true)
+
               let step = 360.0 / 3.0
               switch delta {
               case 1: chartRotation -= step
@@ -257,7 +286,9 @@ struct ContentView: View {
 
     let lastResetTS = UserDefaults.standard.double(forKey: "lastResetDate")
     if lastResetTS > 0 {
-      hasResetToday = Calendar.current.isDate(
+      var calendar = Calendar.current
+      calendar.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? TimeZone.current
+      hasResetToday = calendar.isDate(
         Date(timeIntervalSince1970: lastResetTS),
         inSameDayAs: Date()
       )
@@ -269,40 +300,48 @@ struct ContentView: View {
   }
 
   private func checkResetIfNeeded() {
-    let calendar = Calendar.current
+    var calendar = Calendar.current
+    calendar.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? TimeZone.current
+
     let now = Date()
     let h = UserDefaults.standard.integer(forKey: "startHour")
     let m = UserDefaults.standard.integer(forKey: "startMinute")
 
-    // Giờ reset hôm nay
-    let comps = calendar.dateComponents([.year, .month, .day], from: now)
-    let todayReset = calendar.date(
-      from: DateComponents(
-        year: comps.year, month: comps.month, day: comps.day, hour: h, minute: m
-      ))!
+    let currentHour = calendar.component(.hour, from: now)
+    let currentMinute = calendar.component(.minute, from: now)
 
+    let currentTotalMinutes = currentHour * 60 + currentMinute
+    let resetTotalMinutes = h * 60 + m
+
+    let comps = calendar.dateComponents([.year, .month, .day], from: now)
+    var resetComponents = DateComponents()
+    resetComponents.year = comps.year
+    resetComponents.month = comps.month
+    resetComponents.day = comps.day
+    resetComponents.hour = h
+    resetComponents.minute = m
+    resetComponents.second = 0
+    resetComponents.timeZone = calendar.timeZone
+
+    let todayReset = calendar.date(from: resetComponents)!
     let lastResetTS = UserDefaults.standard.double(forKey: "lastResetDate")
 
-    // Kiểm tra xem đã qua thời gian reset hôm nay chưa và chưa reset
-    let hasPassedTodayReset = now >= todayReset
+    let hasPassedResetTime = currentTotalMinutes >= resetTotalMinutes
     let hasResetAfterTodayReset =
       lastResetTS > 0 && Date(timeIntervalSince1970: lastResetTS) >= todayReset
 
-    let needsReset = hasPassedTodayReset && !hasResetAfterTodayReset
+    let needsReset = hasPassedResetTime && !hasResetAfterTodayReset
 
     if needsReset {
-      print("🔄 Reset needed at \(now) (reset time: \(todayReset))")
-
-      // Lưu stats hiện tại trước khi reset
       let currentTotalTime =
         accumulatedTimes.values.reduce(0, +) + now.timeIntervalSince(currentStartTime)
+
       if currentTotalTime > 0 {
-        let saveDate = calendar.date(byAdding: .second, value: -1, to: todayReset)!  // 1 giây trước reset time
+        let saveDate = calendar.date(byAdding: .second, value: -1, to: todayReset)!
         let keyToSave = statsVM.getLogicalKey(for: saveDate)
 
         if statsVM.repo.fetch(by: keyToSave) == nil {
           statsVM.recordCurrentDayStat(for: saveDate)
-          print("💾 Saved stats for \(keyToSave)")
         }
       }
 
@@ -311,15 +350,10 @@ struct ContentView: View {
       }
 
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-        // Reset tất cả về 0 cho ngày mới
         accumulatedTimes = [0: 0, 1: 0, 2: 0]
         currentStartTime = now
-
-        // Reset currentDayLive cho ngày mới
         statsVM.resetCurrentDay()
-
         UserDefaults.standard.set(now.timeIntervalSince1970, forKey: "lastResetDate")
-        print("✅ Reset completed at \(now)")
 
         withAnimation(.easeIn(duration: 0.4)) {
           pieOpacity = 1.0

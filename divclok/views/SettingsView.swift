@@ -7,9 +7,16 @@ struct SettingsView: View {
   private let pastelGreen = AppColors.pastelColors[1]
 
   @State private var startOfDay = Date()
+  @State private var tempStartOfDay = Date()  // Temporary storage for pending changes
   @State private var showHHMM = true
   @State private var defaultSessionLength: Double = 25
   @State private var selectedMode: String = "Divide"
+  @State private var currentHour = 0
+  @State private var currentMinute = 0
+  @State private var showTimePicker = false
+  @State private var isEditingTime = false  // Track if user is currently editing time
+
+  @State private var lastNotificationTime = Date.distantPast
 
   @State private var generalToggles = [
     ("Enable Notifications", true),
@@ -55,28 +62,32 @@ struct SettingsView: View {
     .onAppear {
       loadCurrentSettings()
     }
-    .onChange(of: startOfDay) {
-      let calendar = Calendar.current
-      let comps = calendar.dateComponents([.hour, .minute], from: startOfDay)
-      let hour = comps.hour ?? 0
-      let minute = comps.minute ?? 0
+    .onChange(of: startOfDay) { oldValue, newValue in
+      // Ignore changes when we're editing or when changes are being applied through applyTimeChange
+      if !isEditingTime {
+        let calendar = Calendar.current
+        let comps = calendar.dateComponents([.hour, .minute], from: newValue)
+        let hour = comps.hour ?? 0
+        let minute = comps.minute ?? 0
 
-      UserDefaults.standard.set(hour, forKey: "startHour")
-      UserDefaults.standard.set(minute, forKey: "startMinute")
-      // Notify ViewModels or reload stats if needed
-      NotificationCenter.default.post(name: Notification.Name("ResetTimeChanged"), object: nil)
+        // Just update the display values, actual changes are handled by applyTimeChange
+        if hour != currentHour || minute != currentMinute {
+          currentHour = hour
+          currentMinute = minute
+        }
+      }
     }
   }
 
   private func loadCurrentSettings() {
     let defaults = UserDefaults.standard
-    let hour = defaults.integer(forKey: "startHour")
-    let minute = defaults.integer(forKey: "startMinute")
+    currentHour = defaults.integer(forKey: "startHour")
+    currentMinute = defaults.integer(forKey: "startMinute")
 
     let calendar = Calendar.current
     var dateComponents = DateComponents()
-    dateComponents.hour = hour
-    dateComponents.minute = minute
+    dateComponents.hour = currentHour
+    dateComponents.minute = currentMinute
 
     if let date = calendar.date(from: dateComponents) {
       startOfDay = date
@@ -91,9 +102,48 @@ struct SettingsView: View {
             .font(.subheadline)
             .foregroundColor(standardTextColor)
 
-          DatePicker("", selection: $startOfDay, displayedComponents: .hourAndMinute)
-            .datePickerStyle(.compact)
-            .labelsHidden()
+          Button(action: {
+            tempStartOfDay = startOfDay
+            isEditingTime = true
+            showTimePicker = true
+          }) {
+            HStack {
+              Text(timeString(from: startOfDay))
+                .font(.system(size: 16))
+                .foregroundColor(standardTextColor)
+              Image(systemName: "clock")
+                .foregroundColor(standardTextColor)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
+          }
+          .sheet(
+            isPresented: $showTimePicker,
+            onDismiss: {
+              isEditingTime = false
+            }
+          ) {
+            NavigationView {
+              DatePicker("", selection: $tempStartOfDay, displayedComponents: .hourAndMinute)
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .navigationBarItems(
+                  leading: Button("Cancel") {
+                    isEditingTime = false
+                    showTimePicker = false
+                  },
+                  trailing: Button("Done") {
+                    startOfDay = tempStartOfDay
+                    isEditingTime = false
+                    showTimePicker = false
+                    applyTimeChange(tempStartOfDay)
+                  }
+                )
+            }
+            .presentationDetents([.height(280)])
+          }
         }
 
         VStack(alignment: .leading, spacing: 10) {
@@ -113,6 +163,27 @@ struct SettingsView: View {
         }
       }
       .padding(.vertical, 8)
+    }
+  }
+
+  private func timeString(from date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "HH:mm"
+    return formatter.string(from: date)
+  }
+
+  private func applyTimeChange(_ date: Date) {
+    let calendar = Calendar.current
+    let comps = calendar.dateComponents([.hour, .minute], from: date)
+    let hour = comps.hour ?? 0
+    let minute = comps.minute ?? 0
+
+    if hour != currentHour || minute != currentMinute {
+      currentHour = hour
+      currentMinute = minute
+      UserDefaults.standard.set(hour, forKey: "startHour")
+      UserDefaults.standard.set(minute, forKey: "startMinute")
+      NotificationCenter.default.post(name: Notification.Name("ResetTimeChanged"), object: nil)
     }
   }
 

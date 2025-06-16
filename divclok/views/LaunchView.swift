@@ -42,9 +42,10 @@ struct LaunchView: View {
         .frame(width: 180, height: 180)
 
       Text("divclok")
-            .matchedGeometryEffect(id: "logo", in: logoNamespace, isSource: true)
+        .matchedGeometryEffect(id: "logoText", in: logoNamespace, isSource: !showContent)
         .font(.system(size: 36, weight: .bold))
         .foregroundColor(AppColors.standardTextColor)
+        .opacity(hideOverlay ? 0 : 1)
 
       Text("Powered by vngbh")
         .font(.system(size: 12))
@@ -89,5 +90,5 @@ struct LaunchView: View {
 }
 
 #Preview {
-    LaunchView()
+  LaunchView()
 }

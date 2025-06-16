@@ -5,6 +5,11 @@ struct AnalystView: View {
   @EnvironmentObject var statsVM: PieStatsViewModel
   @State private var monthOffset = 0
 
+  // Use computed property instead of state
+  private var todayLogicalKey: String {
+    statsVM.getLogicalKey(for: Date())
+  }
+
   private let pastelColors = [
     Color(red: 248 / 255, green: 187 / 255, blue: 208 / 255),
     Color(red: 167 / 255, green: 233 / 255, blue: 211 / 255),
@@ -13,26 +18,44 @@ struct AnalystView: View {
 
   private let standardTextColor = Color(red: 51 / 255, green: 51 / 255, blue: 51 / 255)
 
-  var body: some View {
-    let todayLogicalKey = statsVM.getLogicalKey(for: logicalToday())
-    let calendar = Calendar.current
-    let today = Date()
-    let monthDate = calendar.date(byAdding: .month, value: monthOffset, to: today)!
-    let components = calendar.dateComponents([.year, .month], from: monthDate)
-    let firstOfMonth = calendar.date(from: components)!
-    let range = calendar.range(of: .day, in: .month, for: firstOfMonth)!
-    let firstWeekday = calendar.component(.weekday, from: firstOfMonth)
-    let totalCells = range.count + firstWeekday - 1
+  // Computed properties for calendar calculations
+  private var jstCalendar: Calendar {
+    var calendar = Calendar.current
+    calendar.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? TimeZone.current
+    return calendar
+  }
 
+  private var currentMonthDate: Date {
+    jstCalendar.date(byAdding: .month, value: monthOffset, to: Date())!
+  }
+
+  private var firstOfCurrentMonth: Date {
+    let components = jstCalendar.dateComponents([.year, .month], from: currentMonthDate)
+    return jstCalendar.date(from: components)!
+  }
+
+  private var currentMonthRange: Range<Int> {
+    jstCalendar.range(of: .day, in: .month, for: firstOfCurrentMonth)!
+  }
+
+  private var currentMonthFirstWeekday: Int {
+    jstCalendar.component(.weekday, from: firstOfCurrentMonth)
+  }
+
+  private var currentMonthTotalCells: Int {
+    currentMonthRange.count + currentMonthFirstWeekday - 1
+  }
+
+  var body: some View {
     VStack(alignment: .center, spacing: 12) {
-      header(monthDate: monthDate)
+      header(monthDate: currentMonthDate)
 
       ZStack {
         calendarGrid(
-          for: firstOfMonth,
-          range: range,
-          firstWeekday: firstWeekday,
-          totalCells: totalCells,
+          for: firstOfCurrentMonth,
+          range: currentMonthRange,
+          firstWeekday: currentMonthFirstWeekday,
+          totalCells: currentMonthTotalCells,
           todayLogicalKey: todayLogicalKey
         )
         .id(monthOffset)
@@ -44,6 +67,11 @@ struct AnalystView: View {
     .padding(.top, 40)
     .background(Color.white.ignoresSafeArea())
     .task {
+      statsVM.refreshStats()
+    }
+    .onReceive(NotificationCenter.default.publisher(for: Notification.Name("ResetTimeChanged"))) {
+      _ in
+      statsVM.invalidateLogicalKeyCache()
       statsVM.refreshStats()
     }
     .navigationBarBackButtonHidden(true)
@@ -89,8 +117,8 @@ struct AnalystView: View {
     totalCells: Int,
     todayLogicalKey: String
   ) -> some View {
-    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 6) {
-      let weekdaySymbols = Calendar.current.shortWeekdaySymbols
+    return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 6) {
+      let weekdaySymbols = jstCalendar.shortWeekdaySymbols
       ForEach(weekdaySymbols, id: \.self) { day in
         Text(day.prefix(3))
           .font(.caption2.weight(.semibold))
@@ -102,64 +130,59 @@ struct AnalystView: View {
         if i < firstWeekday - 1 {
           Color.clear.frame(height: 78)
         } else {
-          let day = i - firstWeekday + 2
-          let date = Calendar.current.date(byAdding: .day, value: day - 1, to: firstOfMonth)!
-          let logicalKey = statsVM.getLogicalKey(for: date)
-          let data = statsVM.dailyStats[logicalKey]
-          let isToday = logicalKey == todayLogicalKey
-
-          VStack(spacing: 6) {
-            Text("\(day)")
-              .font(.system(size: 12, weight: .bold))
-              .foregroundColor(isToday ? .red : standardTextColor)
-              .frame(width: 24, height: 24)
-
-            if let data = data {
-              PieChartView(percentages: data, colors: pastelColors)
-                .frame(width: 26, height: 26)
-            } else {
-              Spacer().frame(height: 26)
-            }
-          }
-          .frame(maxWidth: .infinity, minHeight: 78)
-          .background(Color.white)
-          .cornerRadius(8)
-          .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 1)
-          .padding(2)
+          cellView(
+            for: i, firstWeekday: firstWeekday, firstOfMonth: firstOfMonth,
+            todayLogicalKey: todayLogicalKey)
         }
       }
     }
     .padding(.horizontal, 8)
   }
 
+  private func cellView(
+    for index: Int, firstWeekday: Int, firstOfMonth: Date, todayLogicalKey: String
+  ) -> some View {
+    let day = index - firstWeekday + 2
+    let date = jstCalendar.date(byAdding: .day, value: day - 1, to: firstOfMonth)!
+
+    // Get the logical key specific for this date, not from cache
+    let logicalKey = statsVM.getLogicalKey(for: date)
+    let data = statsVM.dailyStats[logicalKey]
+
+    // Strict comparison of logical keys
+    let isLogicalToday = logicalKey == todayLogicalKey
+
+    return VStack(spacing: 6) {
+      Text("\(day)")
+        .font(.system(size: 12, weight: .bold))
+        .foregroundColor(isLogicalToday ? .red : standardTextColor)  // Only red for logical today
+        .frame(width: 24, height: 24)
+
+      if let data = data {
+        PieChartView(percentages: data, colors: pastelColors)
+          .frame(width: 26, height: 26)
+      } else {
+        Spacer().frame(height: 26)
+      }
+    }
+    .frame(maxWidth: .infinity, minHeight: 78)
+    .background(Color.white)
+    .cornerRadius(8)
+    .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 1)
+    .padding(2)
+  }
+
   private func monthTitle(from date: Date) -> String {
     let df = DateFormatter()
     df.dateFormat = "LLLL yyyy"
+    df.timeZone = jstCalendar.timeZone
     df.locale = Locale(identifier: "en_US")
     return df.string(from: date)
   }
 
   private var backButton: some View {
-    Button(action: { dismiss() }) {
-      Image(systemName: "chevron.left")
-        .font(.system(size: 14, weight: .heavy))
-        .foregroundColor(.white)
-        .frame(width: 36, height: 36)
-        .background(Circle().fill(standardTextColor))
-        .shadow(radius: 6)
-    }
-  }
-
-  private func logicalToday() -> Date {
-    let now = Date()
-    let calendar = Calendar.current
-    let startHour = UserDefaults.standard.integer(forKey: "startHour")
-    let startMinute = UserDefaults.standard.integer(forKey: "startMinute")
-    let todayReset = calendar.date(
-      bySettingHour: startHour, minute: startMinute, second: 0, of: now)!
-    if now < todayReset {
-      return calendar.date(byAdding: .day, value: -1, to: now)!
-    }
-    return now
+    CircleBackButton(action: {
+      dismiss()
+    })
   }
 }
