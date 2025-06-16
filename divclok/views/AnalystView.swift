@@ -50,12 +50,11 @@ struct AnalystView: View {
     VStack(alignment: .center, spacing: 12) {
       header(monthDate: currentMonthDate)
 
-      // Show current logical day indicator
-      let logicalDayText = formatLogicalDayText(todayLogicalKey)
-      Text(logicalDayText)
-        .font(.subheadline)
-        .foregroundColor(.gray)
-        .padding(.bottom, 8)
+      // // Show current logical day indicator
+      // Text("Today: \(todayLogicalKey)")
+      //   .font(.subheadline)
+      //   .foregroundColor(.gray)
+      //   .padding(.bottom, 8)
 
       ZStack {
         calendarGrid(
@@ -235,19 +234,5 @@ struct AnalystView: View {
     CircleBackButton(action: {
       dismiss()
     })
-  }
-
-  private func formatLogicalDayText(_ logicalKey: String) -> String {
-    let df = DateFormatter()
-    df.dateFormat = "MMMM d"
-    df.timeZone = jstCalendar.timeZone
-    df.locale = Locale(identifier: "en_US")
-
-    // Convert logical key back to date
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd"
-    formatter.timeZone = jstCalendar.timeZone
-
-    return ""
   }
 }

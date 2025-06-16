@@ -42,8 +42,6 @@ final class PieStatsRepository {
     let req: NSFetchRequest<DayStat> = DayStat.fetchRequest()
     guard let result = try? context.fetch(req) else { return [:] }
 
-    print("📊 Loaded \(result.count) saved days from Core Data")
-
     let dict = result.compactMap { entity -> (String, [Double])? in
       guard let date = entity.date,
         let values = entity.values

@@ -5,11 +5,6 @@ struct divclokApp: App {
   @StateObject private var statsVM: PieStatsViewModel
 
   init() {
-    // DEBUG: Xóa sạch data để debug dễ dàng hơn
-    // #if DEBUG
-    //   Self.clearAllData()
-    // #endif
-
     // Thiết lập UserDefaults TRƯỚC KHI khởi tạo PieStatsViewModel
     let defaults = UserDefaults.standard
     if defaults.object(forKey: "startHour") == nil {

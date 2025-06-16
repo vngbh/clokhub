@@ -19,10 +19,6 @@ final class PieStatsViewModel: ObservableObject {
 
   init() {
     self.dailyStats = repo.fetchAll()
-    let todayKey = getLogicalKey(for: Date())
-    if let todayStat = dailyStats[todayKey] {
-      self.currentDayLive = todayStat
-    }
   }
 
   func getLogicalKey(for date: Date = Date()) -> String {
@@ -72,19 +68,6 @@ final class PieStatsViewModel: ObservableObject {
     }
 
     return key
-  }
-
-  func stats(for date: Date) -> [Double]? {
-    let key = getLogicalKey(for: date)
-    let todayKey = getLogicalKey(for: Date())
-    if key == todayKey {
-      // Cho ngày hôm nay, convert thời gian thực tế thành phần trăm
-      let total = currentDayLive.reduce(0, +)
-      return currentDayLive.map { total > 0 ? $0 / total : 0 }
-    } else {
-      // Cho các ngày khác, trả về phần trăm đã lưu trong Core Data
-      return dailyStats[key]
-    }
   }
 
   func recordCurrentDayStat(for date: Date = Date()) {

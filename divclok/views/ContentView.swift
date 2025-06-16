@@ -5,7 +5,7 @@ struct ContentView: View {
 
   let namespace: Namespace.ID
 
-  @State private var titleOpacity: Double = 0  // Add state for title opacity
+  @State private var titleOpacity: Double = 0
 
   @State private var selectedIndex = 2
   @State private var accumulatedTimes: [Int: TimeInterval] = [0: 0, 1: 0, 2: 0]
@@ -13,7 +13,6 @@ struct ContentView: View {
   @State private var currentTime = Date()
   @State private var chartRotation: Double = 60
   @State private var pieOpacity: Double = 1.0
-  @State private var hasResetToday = false
   @State private var lastResetCheck = Date.distantPast  // For debouncing notifications and reset checks
 
   private let timer = Timer.publish(every: 1 / 60, on: .main, in: .common).autoconnect()  // 60 FPS cho smooth UI
@@ -94,11 +93,6 @@ struct ContentView: View {
         // Update currentDayLive với tần suất cao để UI mượt
         statsVM.updateCurrentDayLive(
           with: accumulatedTimes, selectedIndex: selectedIndex, currentStartTime: currentStartTime)
-      }
-      .onAppear {
-        withAnimation(.easeIn(duration: 1.0)) {
-          titleOpacity = 1.0  // Fade in the title
-        }
       }
     }
   }
@@ -283,16 +277,6 @@ struct ContentView: View {
       accumulatedTimes[selectedIndex, default: 0] += elapsedSince
     }
 
-    let lastResetTS = UserDefaults.standard.double(forKey: "lastResetDate")
-    if lastResetTS > 0 {
-      var calendar = Calendar.current
-      calendar.timeZone = TimeZone(identifier: "Asia/Tokyo") ?? TimeZone.current
-      hasResetToday = calendar.isDate(
-        Date(timeIntervalSince1970: lastResetTS),
-        inSameDayAs: Date()
-      )
-    }
-
     resetIfNeeded()
     currentStartTime = Date()
     chartRotation = -((Double(selectedIndex) * 120 + 60).truncatingRemainder(dividingBy: 360))
@@ -367,32 +351,6 @@ struct ContentView: View {
 
   private func resetIfNeeded() {
     checkResetIfNeeded()
-  }
-
-  private func recordCurrentStat() {
-    let todayKey = statsVM.getLogicalKey(for: Date())
-    let totalTime = accumulatedTimes.values.reduce(0, +)
-    let percents = (0..<3).map { i in
-      let t = accumulatedTimes[i, default: 0]
-      return totalTime > 0 ? t / totalTime : 0
-    }
-    let repo = PieStatsRepository()
-    repo.saveOrUpdate(date: todayKey, values: percents)
-  }
-
-  private func saveDayStatToDB() {
-    let todayKey = statsVM.getLogicalKey(for: Date())
-    let totalTime =
-      accumulatedTimes.values.reduce(0, +) + currentTime.timeIntervalSince(currentStartTime)
-    let percents = (0..<3).map { i in
-      let t =
-        accumulatedTimes[i, default: 0]
-        + (selectedIndex == i ? currentTime.timeIntervalSince(currentStartTime) : 0)
-      return totalTime > 0 ? t / totalTime : 0
-    }
-
-    let repo = PieStatsRepository()
-    repo.saveOrUpdate(date: todayKey, values: percents)
   }
 
   @State private var cachedStartHour: Int = UserDefaults.standard.integer(forKey: "startHour")
