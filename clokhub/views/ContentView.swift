@@ -74,7 +74,7 @@ struct ContentView: View {
         NotificationCenter.default.addObserver(
           forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main
         ) { _ in
-          // Cập nhật thời gian khi app sắp vào foreground
+          // Update elapsed time before the app enters the foreground.
           let elapsed = Date().timeIntervalSince(currentStartTime)
           accumulatedTimes[selectedIndex, default: 0] += elapsed
           currentStartTime = Date()
@@ -100,7 +100,7 @@ struct ContentView: View {
 
             lastResetCheck = now
             print(
-              "⏰ Reset time changed to \(cachedStartHour):\(String(format: "%02d", cachedStartMinute))"
+              "Reset time changed to \(cachedStartHour):\(String(format: "%02d", cachedStartMinute))"
             )
           }
         }
@@ -111,13 +111,13 @@ struct ContentView: View {
       .onReceive(timer) { _ in
         currentTime = Date()
 
-        // Chỉ check reset mỗi giây để tránh tải CPU cao
+        // Check once per second to avoid extra CPU work.
         if Date().timeIntervalSince(lastResetCheck) >= 1.0 {
           checkResetIfNeeded()
           lastResetCheck = Date()
         }
 
-        // Update currentDayLive với tần suất cao để UI mượt
+        // Update live data frequently enough to keep the UI smooth.
         statsVM.updateCurrentDayLive(
           with: accumulatedTimes, selectedIndex: selectedIndex, currentStartTime: currentStartTime)
       }
@@ -226,7 +226,7 @@ struct ContentView: View {
               currentStartTime = now
               currentTime = now
 
-              // Force update ngay lập tức khi chuyển slice
+              // Force an immediate update when switching slices.
               statsVM.updateCurrentDayLive(
                 with: accumulatedTimes, selectedIndex: selectedIndex,
                 currentStartTime: currentStartTime, forceUpdate: true)
@@ -361,7 +361,7 @@ struct ContentView: View {
     currentStartTime = Date()
     chartRotation = -((Double(selectedIndex) * 120 + 60).truncatingRemainder(dividingBy: 360))
 
-    print("📱 App loaded - Current times: \(accumulatedTimes)")
+    print("App loaded - Current times: \(accumulatedTimes)")
   }
 
   private func checkResetIfNeeded() {
@@ -395,7 +395,7 @@ struct ContentView: View {
     let needsReset = hasPassedTodayReset && !hasResetToday
 
     if needsReset {
-      print("🔄 Reset needed - Saving current day and resetting")
+      print("Reset needed - Saving current day and resetting")
 
       // Always save current data before reset, even if total time is 0
       let saveDate = calendar.date(byAdding: .second, value: -1, to: todayReset)!
@@ -430,7 +430,7 @@ struct ContentView: View {
           pieOpacity = 1.0
         }
 
-        print("✅ Reset completed - New day started")
+        print("Reset completed - New day started")
       }
     }
   }

@@ -21,7 +21,6 @@ struct CircleBackButton: View {
       print("Close button tapped")
     })
 
-    // Test trên background khác nhau
     ZStack {
       Color.blue.opacity(0.3)
         .frame(width: 200, height: 100)

@@ -1,71 +1,57 @@
-# clokhub - Smart Time Tracker
+# clokhub
 
-**clokhub** is a minimalist time tracking app designed for focused productivity. Track up to 3 activities simultaneously with beautiful visual analytics.
+clokhub is a lightweight iOS time tracker for following up to three activities in a simple daily cycle. It stores data locally, keeps the active timer moving across app lifecycle changes, and summarizes tracked time with pie chart analytics.
 
-## ✨ Key Features
+## Features
 
-- **3-Activity Focus**: Track multiple activities with elegant pie chart visualization
-- **Smart Daily Reset**: Customizable reset time (default: 22:00 JST) for flexible schedules
-- **Real-time Analytics**: Live pie charts and monthly calendar view
-- **Privacy First**: All data stored locally with Core Data
-- **Beautiful Design**: Clean interface with soothing pastel colors
-- **Smooth Animations**: 60 FPS updates for fluid user experience
+- Track three activity buckets from one focused timer screen.
+- Keep timer state across foreground, background, and app termination events.
+- Configure a custom daily reset time, with Japan Standard Time used for day boundaries.
+- Review daily activity distribution in a monthly calendar.
+- Store all activity data locally with Core Data.
+- Use a clean SwiftUI interface with lightweight animations.
 
-## 🏗 Architecture
+## Requirements
 
-- **SwiftUI** for modern, declarative UI
-- **Core Data** for robust local data persistence
-- **MVVM Pattern** with ObservableObject view models
-- **JST Timezone Support** for consistent day calculation
-- **Background Timer Continuity** - tracks time even when app is closed
+- Xcode 16 or later
+- iOS 18.5 or later
+- macOS with the iOS simulator runtime, or a physical iPhone or iPad
+- Apple Developer account for device signing or App Store distribution
 
-## 📱 Compatibility
-
-- **iOS 16.0+**
-- **iPhone & iPad**
-- **Portrait Orientation** optimized
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Xcode 15.0+
-- iOS 16.0+ Simulator or Device
-- Apple Developer Account (for App Store deployment)
-
-### Installation
+## Getting Started
 
 ```bash
-git clone https://github.com/vngbh/clokhub-ios.git
-cd clokhub-ios
+git clone https://github.com/vngbh/clokhub.git
+cd clokhub
 open clokhub.xcodeproj
 ```
 
-## 📊 App Structure
+In Xcode, select the `clokhub` scheme, choose a simulator or device, then run the app.
 
----
+## Project Structure
 
-## Giao diện
-
-_Thêm ảnh chụp màn hình tại đây nếu có_
-
----
-
-## Công nghệ sử dụng
-
-- SwiftUI
-- @State và @Environment cho quản lý trạng thái
-- DatePicker kiểu compact
-- Tùy chỉnh layout và animation
-
----
-
-## Cài đặt & chạy thử
-
-```bash
-git clone https://github.com/vngbh/clokhub-app.git
-cd clokhub-app
-open ClokhubApp.xcodeproj
+```text
+clokhub/
+  App/                 App entry point
+  Assets.xcassets/     App icons, launch logo, colors, and image assets
+  Components/          Reusable SwiftUI components
+  Models/              Lightweight data transfer models
+  Persistence/         Core Data stack, entities, transformers, and repositories
+  Support/             Shared formatting, colors, and extensions
+  ViewModels/          Observable view models
+  Views/               App screens
 ```
 
-<img src="https://github.com/user-attachments/assets/1357c824-797b-46a4-82f5-75264b9e3bcd" width="30%"> <img src="https://github.com/user-attachments/assets/db093c7c-0935-45b0-8975-0b0fb2cfc8b9" width="30%">
+## Architecture
+
+- SwiftUI for the interface layer.
+- ObservableObject view models for UI state and derived analytics.
+- Core Data for local persistence.
+- UserDefaults for lightweight timer and settings state.
+- Repository-style persistence access through `PieStatsRepository`.
+
+## Documentation
+
+- `Docs/APP_STORE_INFO.md` contains App Store listing content.
+- `Docs/APP_STORE_CHECKLIST.md` contains release preparation notes.
+- `PRIVACY_POLICY.md` describes the app privacy policy.

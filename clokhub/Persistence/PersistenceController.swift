@@ -1,5 +1,3 @@
-// ✅ File: coreData/PersistenceController.swift
-
 import CoreData
 
 struct PersistenceController {

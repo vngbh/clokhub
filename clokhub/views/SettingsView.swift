@@ -230,5 +230,5 @@ struct SettingsView: View {
 
 #Preview {
   SettingsView()
-    .environment(\.colorScheme, .light)  // 👈 nếu bạn muốn kiểm thử dark mode thì đổi sang .dark
+    .environment(\.colorScheme, .light)
 }

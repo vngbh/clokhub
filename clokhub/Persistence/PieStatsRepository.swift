@@ -16,10 +16,9 @@ final class PieStatsRepository {
   }
 
   func saveOrUpdate(date: String, values: [Double]) {
-    // Không save nếu tất cả giá trị đều là 0
     let totalTime = values.reduce(0, +)
     if totalTime == 0 {
-      print("⚠️ Skipping save for \(date) - no time tracked")
+      print("Skipping save for \(date) - no time tracked")
       return
     }
 
@@ -32,9 +31,9 @@ final class PieStatsRepository {
 
     do {
       try context.save()
-      print("💾 Saved stats for \(date): \(values.map { String(format: "%.2f", $0) })")
+      print("Saved stats for \(date): \(values.map { String(format: "%.2f", $0) })")
     } catch {
-      print("❌ Failed to save stats: \(error)")
+      print("Failed to save stats: \(error)")
     }
   }
 
@@ -60,9 +59,9 @@ final class PieStatsRepository {
     do {
       try context.execute(deleteRequest)
       try context.save()
-      print("🗑️ Deleted all Core Data records")
+      print("Deleted all Core Data records")
     } catch {
-      print("❌ Failed to delete Core Data: \(error)")
+      print("Failed to delete Core Data: \(error)")
     }
   }
 }

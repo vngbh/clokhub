@@ -5,24 +5,21 @@ struct clokhubApp: App {
   @StateObject private var statsVM: PieStatsViewModel
 
   init() {
-    // Thiết lập UserDefaults TRƯỚC KHI khởi tạo PieStatsViewModel
+    // Configure defaults before creating PieStatsViewModel.
     let defaults = UserDefaults.standard
     if defaults.object(forKey: "startHour") == nil {
       defaults.set(22, forKey: "startHour")
       defaults.set(0, forKey: "startMinute")
-      // Khởi tạo lastResetDate về một thời điểm trong quá khứ
-      // để đảm bảo reset sẽ xảy ra khi cần thiết
+      // Start far in the past so the next reset can run when needed.
       defaults.set(0, forKey: "lastResetDate")
     }
 
-    // Bây giờ mới khởi tạo statsVM
     self._statsVM = StateObject(wrappedValue: PieStatsViewModel())
   }
 
   private static func clearAllData() {
-    print("🧹 DEBUG: Clearing all app data...")
+    print("DEBUG: Clearing all app data...")
 
-    // Xóa UserDefaults
     let defaults = UserDefaults.standard
     let keys = [
       "startHour", "startMinute", "lastResetDate",
@@ -33,11 +30,10 @@ struct clokhubApp: App {
       defaults.removeObject(forKey: key)
     }
 
-    // Xóa Core Data
     let repo = PieStatsRepository()
     repo.deleteAll()
 
-    print("✅ DEBUG: All app data cleared!")
+    print("DEBUG: All app data cleared!")
   }
 
   var body: some Scene {

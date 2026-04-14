@@ -122,7 +122,7 @@ struct AnalystView: View {
     totalCells: Int,
     todayLogicalKey: String
   ) -> some View {
-    let pastelGreen = Color(red: 167 / 255, green: 233 / 255, blue: 211 / 255)  // pastel xanh lá
+    let pastelGreen = Color(red: 167 / 255, green: 233 / 255, blue: 211 / 255)
     return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 6) {
       let weekdaySymbols = jstCalendar.shortWeekdaySymbols
       ForEach(weekdaySymbols.indices, id: \.self) { i in
@@ -151,7 +151,7 @@ struct AnalystView: View {
     weekendColor: Color
   ) -> some View {
     let day = index - firstWeekday + 2
-    // Đảm bảo ngày của cell là 00:00 JST
+    // Keep each calendar cell anchored at 00:00 JST.
     var comps = jstCalendar.dateComponents([.year, .month], from: firstOfMonth)
     comps.day = day
     comps.hour = 0
@@ -160,14 +160,14 @@ struct AnalystView: View {
     comps.timeZone = jstCalendar.timeZone
     let date = jstCalendar.date(from: comps)!
 
-    // So sánh bằng string hiển thị (ví dụ "June 15")
+    // Compare the visible day string, such as "June 15".
     let df = DateFormatter()
     df.dateFormat = "MMMM d"
     df.timeZone = jstCalendar.timeZone
     df.locale = Locale(identifier: "en_US")
     let cellDayString = df.string(from: date)
 
-    // Lấy ngày logic hiện tại (00:00 JST)
+    // Resolve the current logical day at 00:00 JST.
     let logicKeyDate: Date = {
       let formatter = DateFormatter()
       formatter.dateFormat = "yyyy-MM-dd"
@@ -178,26 +178,22 @@ struct AnalystView: View {
 
     let isFocusDay = cellDayString == logicDayString
 
-    // Cho calendar cells, sử dụng trực tiếp ngày của cell làm key
-    // Không áp dụng logic reset time vì dữ liệu đã được lưu với key chính xác
+    // Use the cell date directly because persisted data already uses this key.
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd"
     formatter.timeZone = jstCalendar.timeZone
     let logicalKey = formatter.string(from: date)
 
-    // Nếu là ngày logic hiện tại, hiển thị real-time data
+    // Show live data for the current logical day.
     let displayData: [Double]? = {
       if isFocusDay {
-        // Real-time data cho ngày hiện tại
         let total = statsVM.currentDayLive.reduce(0, +)
         return total > 0 ? statsVM.currentDayLive.map { $0 / total } : nil
       } else {
-        // Dữ liệu đã lưu cho các ngày khác
         return statsVM.dailyStats[logicalKey]
       }
     }()
 
-    // Tô màu vàng cam cho Chủ nhật và Thứ bảy
     let weekday = jstCalendar.component(.weekday, from: date)
     let isWeekend = (weekday == 1 || weekday == 7)
     let textColor: Color = isFocusDay ? .red : (isWeekend ? weekendColor : standardTextColor)
