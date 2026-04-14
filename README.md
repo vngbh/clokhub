@@ -1,6 +1,6 @@
-# divclok - Smart Time Tracker
+# clokhub - Smart Time Tracker
 
-**divclok** is a minimalist time tracking app designed for focused productivity. Track up to 3 activities simultaneously with beautiful visual analytics.
+**clokhub** is a minimalist time tracking app designed for focused productivity. Track up to 3 activities simultaneously with beautiful visual analytics.
 
 ## ✨ Key Features
 
@@ -36,9 +36,9 @@
 ### Installation
 
 ```bash
-git clone https://github.com/vngbh/divclok-ios.git
-cd divclok-ios
-open divclok.xcodeproj
+git clone https://github.com/vngbh/clokhub-ios.git
+cd clokhub-ios
+open clokhub.xcodeproj
 ```
 
 ## 📊 App Structure
@@ -63,9 +63,9 @@ _Thêm ảnh chụp màn hình tại đây nếu có_
 ## Cài đặt & chạy thử
 
 ```bash
-git clone https://github.com/vngbh/divclok-app.git
-cd divclok-app
-open DivclokApp.xcodeproj
+git clone https://github.com/vngbh/clokhub-app.git
+cd clokhub-app
+open ClokhubApp.xcodeproj
 ```
 
 <img src="https://github.com/user-attachments/assets/1357c824-797b-46a4-82f5-75264b9e3bcd" width="30%"> <img src="https://github.com/user-attachments/assets/db093c7c-0935-45b0-8975-0b0fb2cfc8b9" width="30%">

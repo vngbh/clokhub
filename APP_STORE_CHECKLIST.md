@@ -7,7 +7,7 @@
 - [ ] **Info.plist** configured with all required keys
 - [ ] **App Icons** - All required sizes (20x20 to 1024x1024)
 - [ ] **Launch Screen** configured properly
-- [ ] **Bundle Identifier** set (currently: `vngbh.divclok`)
+- [ ] **Bundle Identifier** set (currently: `vngbh.clokhub`)
 - [ ] **Version Numbers** set (Marketing: 1.0, Build: 1)
 - [ ] **Deployment Target** iOS 16.0+
 - [ ] **Code Signing** configured for Distribution
@@ -54,7 +54,7 @@
 
 ```bash
 # Clean build
-rm -rf ~/Library/Developer/Xcode/DerivedData/divclok-*
+rm -rf ~/Library/Developer/Xcode/DerivedData/clokhub-*
 ```
 
 ### 2. Archive for Distribution

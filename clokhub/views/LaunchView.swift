@@ -43,7 +43,7 @@ struct LaunchView: View {
         .clipShape(RoundedRectangle(cornerRadius: 32))
         .padding(.bottom, 36)
 
-      Text("divclok")
+      Text("clokhub")
         .matchedGeometryEffect(id: "logoText", in: logoNamespace, isSource: !showContent)
         .font(.system(size: 36, weight: .bold))
         .foregroundColor(AppColors.standardTextColor)

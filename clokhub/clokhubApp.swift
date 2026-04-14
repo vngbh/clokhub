@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct divclokApp: App {
+struct clokhubApp: App {
   @StateObject private var statsVM: PieStatsViewModel
 
   init() {

@@ -7,7 +7,7 @@ struct PersistenceController {
   let container: NSPersistentContainer
 
   private init(inMemory: Bool = false) {
-    container = NSPersistentContainer(name: "divclokModel")
+    container = NSPersistentContainer(name: "clokhubModel")
     if inMemory {
       container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
     }

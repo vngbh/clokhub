@@ -1,6 +1,6 @@
 //
 //  DayStat+CoreDataClass.swift
-//  divclok
+//  clokhub
 //
 //  Created by baohoang on 2025/06/16.
 //

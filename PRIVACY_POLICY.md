@@ -1,10 +1,10 @@
-# Privacy Policy for divclok
+# Privacy Policy for clokhub
 
 **Last updated:** June 16, 2025
 
 ## Information We Collect
 
-divclok is designed with privacy in mind. We collect minimal information to provide you with the best time tracking experience:
+clokhub is designed with privacy in mind. We collect minimal information to provide you with the best time tracking experience:
 
 ### Data Stored Locally
 
@@ -52,7 +52,7 @@ You have the right to:
 For questions about this Privacy Policy, contact us at:
 
 - Email: vngbh@example.com
-- App Store: divclok Support
+- App Store: clokhub Support
 
 ## Changes to This Policy
 
@@ -60,4 +60,4 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 
 ---
 
-By using divclok, you agree to this Privacy Policy.
+By using clokhub, you agree to this Privacy Policy.

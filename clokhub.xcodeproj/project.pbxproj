@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		5C50BE062DFDF558003B6E6B /* divclok.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = divclok.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5C50BE062DFDF558003B6E6B /* clokhub.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = clokhub.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		5C50BE082DFDF558003B6E6B /* divclok */ = {
+		5C50BE082DFDF558003B6E6B /* clokhub */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = divclok;
+			path = clokhub;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		5C50BDFD2DFDF558003B6E6B = {
 			isa = PBXGroup;
 			children = (
-				5C50BE082DFDF558003B6E6B /* divclok */,
+				5C50BE082DFDF558003B6E6B /* clokhub */,
 				5C50BE072DFDF558003B6E6B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		5C50BE072DFDF558003B6E6B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5C50BE062DFDF558003B6E6B /* divclok.app */,
+				5C50BE062DFDF558003B6E6B /* clokhub.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5C50BE052DFDF558003B6E6B /* divclok */ = {
+		5C50BE052DFDF558003B6E6B /* clokhub */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5C50BE112DFDF559003B6E6B /* Build configuration list for PBXNativeTarget "divclok" */;
+			buildConfigurationList = 5C50BE112DFDF559003B6E6B /* Build configuration list for PBXNativeTarget "clokhub" */;
 			buildPhases = (
 				5C50BE022DFDF558003B6E6B /* Sources */,
 				5C50BE032DFDF558003B6E6B /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				5C50BE082DFDF558003B6E6B /* divclok */,
+				5C50BE082DFDF558003B6E6B /* clokhub */,
 			);
-			name = divclok;
+			name = clokhub;
 			packageProductDependencies = (
 			);
-			productName = divclok;
-			productReference = 5C50BE062DFDF558003B6E6B /* divclok.app */;
+			productName = clokhub;
+			productReference = 5C50BE062DFDF558003B6E6B /* clokhub.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 5C50BE012DFDF558003B6E6B /* Build configuration list for PBXProject "divclok" */;
+			buildConfigurationList = 5C50BE012DFDF558003B6E6B /* Build configuration list for PBXProject "clokhub" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5C50BE052DFDF558003B6E6B /* divclok */,
+				5C50BE052DFDF558003B6E6B /* clokhub */,
 			);
 		};
 /* End PBXProject section */
@@ -266,7 +266,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = vngbh.divclok;
+				PRODUCT_BUNDLE_IDENTIFIER = vngbh.clokhub;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -294,7 +294,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = vngbh.divclok;
+				PRODUCT_BUNDLE_IDENTIFIER = vngbh.clokhub;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -305,7 +305,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		5C50BE012DFDF558003B6E6B /* Build configuration list for PBXProject "divclok" */ = {
+		5C50BE012DFDF558003B6E6B /* Build configuration list for PBXProject "clokhub" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5C50BE0F2DFDF559003B6E6B /* Debug */,
@@ -314,7 +314,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5C50BE112DFDF559003B6E6B /* Build configuration list for PBXNativeTarget "divclok" */ = {
+		5C50BE112DFDF559003B6E6B /* Build configuration list for PBXNativeTarget "clokhub" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5C50BE122DFDF559003B6E6B /* Debug */,

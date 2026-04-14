@@ -27,7 +27,7 @@ struct ContentView: View {
       let fullDiameter = geo.size.width
 
       VStack {
-        Text("divclok")
+        Text("clokhub")
           .matchedGeometryEffect(id: "logoText", in: namespace, isSource: false)
           .font(.largeTitle.bold())
           .foregroundColor(standardTextColor)

@@ -1,8 +1,8 @@
-# divclok - Smart Time Tracker
+# clokhub - Smart Time Tracker
 
 ## App Store Description
 
-**Transform your productivity with divclok - the elegant time tracker designed for focused work.**
+**Transform your productivity with clokhub - the elegant time tracker designed for focused work.**
 
 ### ✨ Key Features
 
@@ -43,9 +43,9 @@
 - Anyone wanting to understand their time usage
 - People with non-traditional schedules
 
-### What Makes divclok Special:
+### What Makes clokhub Special:
 
-Unlike other time trackers, divclok focuses on simplicity and visual clarity. The unique 3-slice approach prevents overwhelming choice paralysis while the customizable reset time accommodates any lifestyle.
+Unlike other time trackers, clokhub focuses on simplicity and visual clarity. The unique 3-slice approach prevents overwhelming choice paralysis while the customizable reset time accommodates any lifestyle.
 
 ---
 
@@ -68,8 +68,8 @@ time tracker, productivity, focus timer, time management, work timer, study time
 
 ## Support Information
 
-**Support URL:** https://github.com/vngbh/divclok-ios
-**Marketing URL:** https://your-website.com/divclok  
+**Support URL:** https://github.com/vngbh/clokhub-ios
+**Marketing URL:** https://your-website.com/clokhub  
 **Privacy Policy:** https://your-website.com/privacy
 
 ---
