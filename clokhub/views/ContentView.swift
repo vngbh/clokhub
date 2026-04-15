@@ -16,7 +16,7 @@ struct ContentView: View {
   @State private var pieOpacity: Double = 1.0
   @State private var lastResetCheck = Date.distantPast
 
-  private let timer = Timer.publish(every: 1 / 60, on: .main, in: .common).autoconnect()  // 60 FPS cho smooth UI
+  private let timer = Timer.publish(every: 1 / 60, on: .main, in: .common).autoconnect()  // 60 FPS for smooth UI
 
   private let pastelColors = AppColors.pastelColors
   private let standardTextColor = AppColors.standardTextColor
